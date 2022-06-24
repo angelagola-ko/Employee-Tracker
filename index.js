@@ -29,22 +29,51 @@ function init() {
       case "view all roles":
         viewAllRoles();
         break;
-      case "add a role":
-        addARole();
+      case "view all employees":
+        viewAllEmp();
         break;
-    }
-  });
-}
+        case "add a role":
+          addARole();
+          break;
+          case "add an employee":
+            addEmployee();
+            break;
+            case "update an employee role":
+              updateEmployeeRole();
+              break;
+            }
+          });
+        }
+        //Prints all departments
+        function viewAllDepartments() {
+          const sql = "SELECT * FROM department";
+          db.query(sql, (err, result) => {
+            if (err) {
+              console.log(err);
+            }
+            console.log(result);
+          })
+        }
+        
+        function viewAllRoles() {
+          console.log("roles");
+          const sql = `SELECT * FROM roles`;
+          db.query(sql, (err,result) => {
+            if (err) {
+              console.log(err);
+            }
+            console.log(result);
+          })
+        }
+        
+        function viewAllEmp() {
+          db.query('SELECT * FROM employee', (err,res) => {
+            console.table(res);
+          })
+          
+        }
 
-function viewAllDepartments() {
-  console.log("yep");
-}
-
-function viewAllRoles() {
-  console.log("roles");
-}
-
-function addARole() {
+        function addARole() {
   console.log("roles");
   prompt([
     {
@@ -108,6 +137,72 @@ function getDepartmentId(departmentName){
         break;
     }
     return departmentId;
+};
+
+function addEmployee() {
+  //connection.query()
+  prompt([
+    {
+      type: "text",
+      name: "first_name",
+      message: "What is the employees first name?"
+    },
+    {
+      type: "text",
+      name: "last_name",
+      message: "What is the employees last name?"
+    },
+    {
+      type: "list",
+      name: "role_id",
+      message: "What is the employee's role id?",
+      choices: ["Engineer", "Sales Manager", "Human Resources", "Marketing Manager"]
+    }
+  ])
+};
+function updateEmployeeRole() {
+  //query database to get all employees
+  db.query('SELECT id, first_name, last_name FROM employee;', (err, result) => {
+    let employees = [];
+    for (let i = 0; i < result.length; i++) {
+      employees.push({name:`${result[i].first_name} ${result[i].last_name}`,value:result[i].id})
+    }
+    prompt([
+      {
+        type: "list",
+        name: "updateEmp",
+        message: "Which employee would you like to update?",
+        choices: employees
+        //in array instead of hardcoded.
+      }]).then(({updateEmp}) => {
+        db.query('SELECT id, title FROM roles', (err,result) => {
+          let roles = [];
+          for (let i = 0; i < result.length; i++) {
+            roles.push({name:result[i].title, value: result[i].id});
+          };
+        
+          prompt([
+            {
+              type: 'list',
+              name: "updateRole",
+              message: "What is employee's new role?",
+              choices: roles
+            }
+          ]).then(({updateRole}) => {
+            db.query("UPDATE employee SET role_id=? WHERE id=?", [updateRole, updateEmp], (err,res) => {
+              if(err) throw(err);
+              viewAllEmp();
+            })
+          })
+
+        })
+      })
+      
+  });
+  //   }//.then... //send thru prompt
+  //   //.then? //pick name //update by id
+  //   //update this with this
+  // ])
 };
 
 //What is the name of the department
