@@ -32,6 +32,9 @@ function init() {
       case "view all employees":
         viewAllEmp();
         break;
+        case "add a department":
+          addADepartment();
+          break;
         case "add a role":
           addARole();
           break;
@@ -46,12 +49,12 @@ function init() {
         }
         //Prints all departments
         function viewAllDepartments() {
-          const sql = "SELECT * FROM department";
+          const sql = "SELECT name FROM department";
           db.query(sql, (err, result) => {
             if (err) {
               console.log(err);
             }
-            console.log(result);
+            console.table(result);
           })
         }
         
@@ -62,7 +65,7 @@ function init() {
             if (err) {
               console.log(err);
             }
-            console.log(result);
+            console.table(result);
           })
         }
         
@@ -72,6 +75,20 @@ function init() {
           })
           
         }
+
+        function addADepartment() {
+          console.log('hey');
+          prompt([
+            {
+              type: "text",
+              name: "department",
+              message: "What is the name of the department?"
+            }
+          ]).then((resp) => {
+            console.log("Department added!")
+            console.table(resp)
+          }
+        )};
 
         function addARole() {
   console.log("roles");
@@ -93,29 +110,14 @@ function init() {
       choices: ["Engineering", "Sales", "Human Resources", "Marketing"],
     },
   ]).then((resp) => {
-    console.log(resp);
-    // let departmentId;
-    // switch (resp.addDepartment) {
-    //   case "Engineering":
-    //     departmentId = 1;
-    //     break;
-    //   case "Sales":
-    //     departmentId = 2;
-    //     break;
-    //   case "Human Resources":
-    //     departmentId = 3;
-    //     break;
-    //   case "Marketing":
-    //     departmentId = 4;
-    //     break;
-    // }
+    console.table(resp);
     const sql = "INSERT INTO roles (title, salary, department_id) VALUES ?";
     const params = [[resp.role, resp.salary, getDepartmentId(resp.department)]];
     db.query(sql, [params], (err, result) => {
       if (err) {
         console.log(err);
       }
-      console.log(result);
+      console.log('Successfully added to roles!');
     });
   });
 }
@@ -141,24 +143,83 @@ function getDepartmentId(departmentName){
 
 function addEmployee() {
   //connection.query()
-  prompt([
-    {
-      type: "text",
-      name: "first_name",
-      message: "What is the employees first name?"
-    },
-    {
-      type: "text",
-      name: "last_name",
-      message: "What is the employees last name?"
-    },
-    {
-      type: "list",
-      name: "role_id",
-      message: "What is the employee's role id?",
-      choices: ["Engineer", "Sales Manager", "Human Resources", "Marketing Manager"]
-    }
-  ])
+  //query database to get all employees
+  db.query('SELECT id, title FROM roles;', (err, result) => {
+    let roles = [];
+    for (let i = 0; i < result.length; i++) {
+      roles.push({name:result[i].title,value:result[i].id})
+  }
+    prompt([
+      {
+        type: "text",
+        name: "firstname",
+        message: "What is the employees first name?"
+      },
+      {
+        type: "text",
+        name: "lastname",
+        message: "What is the employees last name?"
+      
+        //in array instead of hardcoded.
+      }]).then(({addNewEmployee}) => {
+        db.query('SELECT id, title FROM roles', (err,result) => {
+          let roles = [];
+          for (let i = 0; i < result.length; i++) {
+            roles.push({name:result[i].title, value: result[i].id});
+          };
+          db.query('SELECT id, first_name, last_name FROM employee;', (err, result) => {
+            let employees = [];
+            for (let i = 0; i < result.length; i++) {
+              employees.push({name:`${result[i].first_name} ${result[i].last_name}`,value:result[i].id})
+            }
+          prompt([
+            {
+              type: 'list',
+              name: "role",
+              message: "What is employee's role?",
+              choices: roles
+            },
+            {
+              type:"list",
+              name:"supervisor",
+              message: "Who is the employee's manager/supervisor?",
+              choices: employees
+            }
+          ]).then(({newEmployee}) => {
+            const sql= "INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES ?";
+            const params = [[resp.firstname, resp.lastname, getRoleId(resp.role),getManagerId(resp.supervisor)]];
+            db.query(sql, [params], (err,result) => {
+              if(err) throw(err);
+              viewAllEmp();
+            }
+            )
+            })
+          
+          })
+
+        })
+      })
+      
+  });
+  
+  // prompt([
+  //   {
+  //     type: "text",
+  //     name: "first_name",
+  //     message: "What is the employees first name?"
+  //   },
+  //   {
+  //     type: "text",
+  //     name: "last_name",
+  //     message: "What is the employees last name?"
+  //   },
+  //   {
+  //     type: "list",
+  //     name: "role_id",
+  //     message: "What is the employee's role?",
+  //     choices: ["Engineer", "Sales Manager", "Human Resources", "Marketing Manager"]
+  //   }
+  // ])
 };
 function updateEmployeeRole() {
   //query database to get all employees
