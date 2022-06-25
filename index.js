@@ -55,7 +55,7 @@ function viewAllDepartments() {
     if (err) {
       console.log(err);
     }
-    console.log(result);
+   // console.log(result);
     console.table(result);
     init();
   });
@@ -350,5 +350,3 @@ function updateEmployeeRole() {
 //maria/
 //ffsfsd/sdf
 //fdsfsdfsdf
-
-init();
