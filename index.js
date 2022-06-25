@@ -57,6 +57,7 @@ function viewAllDepartments() {
     }
     console.log(result);
     console.table(result);
+    init();
   });
 }
 //view all roles
@@ -68,12 +69,14 @@ function viewAllRoles() {
       console.log(err);
     }
     console.table(result);
+    init();
   });
 }
 //view all employees
 function viewAllEmp() {
   db.query("SELECT * FROM employee", (err, res) => {
     console.table(res);
+    init();
   });
 }
 //add a department
@@ -92,6 +95,7 @@ function addADepartment() {
       if (err) throw err;
     });
     console.table(resp);
+    init();
   });
 }
 //Add a role
@@ -121,7 +125,7 @@ function addARole() {
       },
     ]).then((resp) => {
       console.table(resp);
-      const sql = "INSERT INTO roles (title, salary, department_id) VALUES ?";
+      const sql = `INSERT INTO roles (title, salary, department_id) VALUES ("${resp.role}", "${resp.salary}", (SELECT id FROM department WHERE name = "${resp.dept}"));`
       // 
       const handleDepartment = async () => {
         await getDepartmentId(resp.department).then((res) => {
@@ -141,6 +145,7 @@ function addARole() {
           console.log(err);
         }
         console.log("Successfully added to roles!");
+        init();
       });
     });
   });
@@ -157,6 +162,7 @@ async function getDepartmentId(departmentName) {
         console.log(res[0].id);
         departmentId = res[0].id;
         resolve(departmentId);
+        init();
       }
     });
   });
@@ -313,6 +319,7 @@ function updateEmployeeRole() {
             (err, res) => {
               if (err) throw err;
               viewAllEmp();
+              init();
             }
           );
         });
@@ -343,3 +350,5 @@ function updateEmployeeRole() {
 //maria/
 //ffsfsd/sdf
 //fdsfsdfsdf
+
+init();
