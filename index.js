@@ -123,17 +123,32 @@ function addARole() {
         message: "What department does the role belong to?",
         choices: departments,
       },
-    ]).then((resp) => {
+    ]).then (async (resp) => {
       console.table(resp);
       const sql = `INSERT INTO roles (title, salary, department_id) VALUES ("${resp.role}", "${resp.salary}", (SELECT id FROM department WHERE name = "${resp.department}"));`
-      // 
+      // //
+      // getDepartmentId(resp.department).then((res) => {
+      //   const params = [
+      //     [resp.role, resp.salary, res],
+      //   ];
+      //   db.query(sql, params, (err, result) => {
+      //     //console.log(params);
+      //     //console.log(params[0]);
+      //     if (err) {
+      //       console.log(err);
+      //     }
+      //     console.log("Successfully added to roles!");
+      //     init();
+      //   });
+      // })
+      
+      //
       const handleDepartment = async () => {
-        await getDepartmentId(resp.department).then((res) => {
-          return res;
-        });
-      };
-      const dID = handleDepartment();
-      console.log("this is dID = " + dID);
+        return await getDepartmentId(resp.department)
+        };
+      
+      const dID =await handleDepartment();
+    //  console.log("this is dID = " + dID);
 
       const params = [
         [resp.role, resp.salary, getDepartmentId(resp.department)],
@@ -152,17 +167,16 @@ function addARole() {
 }
 
 async function getDepartmentId(departmentName) {
-  console.log("Searching for " + departmentName);
+ // console.log("Searching for " + departmentName);
   let departmentId;
   let query = `SELECT id FROM department WHERE name=\'${departmentName}\'`;
   let dbQuery = new Promise((resolve, reject) => {
     db.query(query, (err, res) => {
       if (err) throw reject(err);
       else {
-        console.log(res[0].id);
+    //    console.log(res[0].id);
         departmentId = res[0].id;
         resolve(departmentId);
-        init();
       }
     });
   });
