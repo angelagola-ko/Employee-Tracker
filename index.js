@@ -55,7 +55,7 @@ function viewAllDepartments() {
     if (err) {
       console.log(err);
     }
-   // console.log(result);
+    // console.log(result);
     console.table(result);
     init();
   });
@@ -101,11 +101,13 @@ function addADepartment() {
 //Add a role
 function addARole() {
   console.log("roles");
-  db.query("SELECT name FROM department", (err, result) => {
+  db.query("SELECT id, name FROM department", (err, result) => {
     let departments = [];
     for (let i = 0; i < result.length; i++) {
-      departments.push({ name: result[i].name });
+      departments.push({ name: result[i].name, value: result[i].id });
     }
+
+    console.log('Dept.: ',departments);
     prompt([
       {
         type: "text",
@@ -123,9 +125,15 @@ function addARole() {
         message: "What department does the role belong to?",
         choices: departments,
       },
-    ]).then (async (resp) => {
+    ]).then(resp => {
       console.table(resp);
-      const sql = `INSERT INTO roles (title, salary, department_id) VALUES ("${resp.role}", "${resp.salary}", (SELECT id FROM department WHERE name = "${resp.department}"));`
+      const sql = `INSERT INTO roles (title, salary, department_id) VALUES ("${resp.role}", ${resp.salary}, ${resp.department});`;
+      
+      
+    db.query(sql, err => {
+      if(err) throw (err);
+      init();
+    })
       // //
       // getDepartmentId(resp.department).then((res) => {
       //   const params = [
@@ -141,51 +149,52 @@ function addARole() {
       //     init();
       //   });
       // })
+
+
       
       //
-      const handleDepartment = async () => {
-        return await getDepartmentId(resp.department)
-        };
-      
-      const dID =await handleDepartment();
-    //  console.log("this is dID = " + dID);
+      // const handleDepartment = async () => {
+      //   return await getDepartmentId(resp.department);
+      // };
 
-      const params = [
-        [resp.role, resp.salary, getDepartmentId(resp.department)],
-      ];
-      db.query(sql, params, (err, result) => {
-        //console.log(params);
-        //console.log(params[0]);
-        if (err) {
-          console.log(err);
-        }
-        console.log("Successfully added to roles!");
-        init();
+      // const dID = await handleDepartment();
+      // //  console.log("this is dID = " + dID);
+
+      // const params = [
+      //   [resp.role, resp.salary, resp.department],
+      // ];
+      // db.query(sql, params, (err, result) => {
+      //   //console.log(params);
+      //   //console.log(params[0]);
+      //   if (err) {
+      //     console.log(err);
+      //   }
+      //   console.log("Successfully added to roles!");
       });
     });
-  });
-}
+  };
+// async function getDepartmentId(departmentName) {
+//   // console.log("Searching for " + departmentName);
+//   let departmentId;
+//   let query = `SELECT id FROM department WHERE name='${departmentName}'`;
+//   let dbQuery = new Promise((resolve, reject) => {
+//     db.query(query, (err, res) => {
+//       if (err) throw reject(err);
+//       else {
+//         //    console.log(res[0].id);
+//         departmentId = res[0].id;
+//         resolve(departmentId);
+//       }
+//     });
+//   });
+//   departmentId = await dbQuery.then((res) => {
+//     console.log(res);
+//     return res;
+//   });
+//   console.log("departmentId = " + departmentId);
+//   return departmentId;
 
-async function getDepartmentId(departmentName) {
- // console.log("Searching for " + departmentName);
-  let departmentId;
-  let query = `SELECT id FROM department WHERE name=\'${departmentName}\'`;
-  let dbQuery = new Promise((resolve, reject) => {
-    db.query(query, (err, res) => {
-      if (err) throw reject(err);
-      else {
-    //    console.log(res[0].id);
-        departmentId = res[0].id;
-        resolve(departmentId);
-      }
-    });
-  });
-  departmentId = await dbQuery.then((res) => {
-    console.log(res);
-    return res;
-  });
-  console.log("departmentId = " + departmentId);
-  return departmentId;
+
   // switch (departmentName) {
   //   case "Engineering":
   //     departmentId = 1;
@@ -201,7 +210,7 @@ async function getDepartmentId(departmentName) {
   //     break;
   // }
   //return departmentId;
-}
+
 
 function addEmployee() {
   //connection.query()
@@ -211,90 +220,83 @@ function addEmployee() {
     for (let i = 0; i < result.length; i++) {
       roles.push({ name: result[i].title, value: result[i].id });
     }
-  db.query("SELECT id, title FROM roles", (err, result) => {
-    let roles = [];
-      for (let i = 0; i < result.length; i++) {
-        roles.push({ name: result[i].title, value: result[i].id });
-    }
-  db.query(
+
+    db.query(
       "SELECT id, first_name, last_name FROM employee;",
-        (err, result) => {
-          let employees = [];
-          for (let i = 0; i < result.length; i++) {
-              employees.push({
-                name: `${result[i].first_name} ${result[i].last_name}`,
-                value: result[i].id,
-              });
-            }
-            prompt([
-              {
-                type: "text",
-                name: "firstname",
-                message: "What is the employees first name?",
-              },
-              {
-                type: "text",
-                name: "lastname",
-                message: "What is the employees last name?",
-        
-                //in array instead of hardcoded.
-              },
-              {
-                type: "list",
-                name: "role",
-                message: "What is employee's role?",
-                choices: roles,
-              },
-              {
-                type: "list",
-                name: "supervisor",
-                message: "Who is the employee's manager/supervisor?",
-                choices: employees,
-              },
-            ]).then((newEmployee) => {
-              const sql =
-                "INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES ?";
-              const params = [
-                [
-                  newEmployee.firstname,
-                  newEmployee.lastname,
-                  1,
-                  1
-                  //getRoleId(newEmployee.role),
-                 // getManagerId(newEmployee.supervisor),
-                ],
-              ];
-              db.query(sql, [params], (err, result) => {
-                if (err) throw err;
-                viewAllEmp();
-              });
-            });
-          }
-        );
-      });
-    });
-  };
+      (err, result) => {
+        let employees = [];
+        for (let i = 0; i < result.length; i++) {
+          employees.push({
+            name: `${result[i].first_name} ${result[i].last_name}`,
+            value: result[i].id,
+          });
+        }
+        prompt([
+          {
+            type: "text",
+            name: "firstname",
+            message: "What is the employees first name?",
+          },
+          {
+            type: "text",
+            name: "lastname",
+            message: "What is the employees last name?",
 
+            //in array instead of hardcoded.
+          },
+          {
+            type: "list",
+            name: "role",
+            message: "What is employee's role?",
+            choices: roles,
+          },
+          {
+            type: "list",
+            name: "supervisor",
+            message: "Who is the employee's manager/supervisor?",
+            choices: employees,
+          },
+        ]).then((newEmployee) => {
+          const sql =
+            "INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES ?";
+          const params = [
+            [
+              newEmployee.firstname,
+              newEmployee.lastname,
+              newEmployee.role, //NOT RIGHT I HARDCODED.
+              newEmployee.supervisor,
+              //getRoleId(newEmployee.role),
+              // getManagerId(newEmployee.supervisor),
+            ],
+          ];
+          db.query(sql, [params], (err, result) => {
+            if (err) throw err;
+            viewAllEmp();
+          });
+        });
+      }
+    );
+  });
+}
 
-
-  // prompt([
-  //   {
-  //     type: "text",
-  //     name: "first_name",
-  //     message: "What is the employees first name?"
-  //   },
-  //   {
-  //     type: "text",
-  //     name: "last_name",
-  //     message: "What is the employees last name?"
-  //   },
-  //   {
-  //     type: "list",
-  //     name: "role_id",
-  //     message: "What is the employee's role?",
-  //     choices: ["Engineer", "Sales Manager", "Human Resources", "Marketing Manager"]
-  //   }
-  // ])
+// prompt([
+//   {
+//     type: "text",
+//     name: "first_name",
+//     message: "What is the employees first name?"
+//   },
+//   {
+//     type: "text",
+//     name: "last_name",
+//     message: "What is the employees last name?"
+//   },
+//   {
+//     type: "list",
+//     name: "role_id",
+//     message: "What is the employee's role?",
+//     choices: ["Engineer", "Sales Manager", "Human Resources", "Marketing Manager"]
+//   }
+// ])
 
 function updateEmployeeRole() {
   //query database to get all employees
